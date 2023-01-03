@@ -1,33 +1,43 @@
 """
-This code produces an EEG dataset according to the methodology described by Haufe et al. in "EEG potentials predict upcoming emergency brakings during simulated driving." dx.doi.org/10.1088/1741-2560/8/5/056001. Instead of the original modeling approach, we train and test other approaches for all test subjects from the Haufe et al. study. 
+This code produces an EMG dataset according to the methodology described by Haufe et al. in "EEG potentials predict upcoming emergency brakings during simulated driving." dx.doi.org/10.1088/1741-2560/8/5/056001. Instead of the original modeling approach, we train and test other approaches for all test subjects from the Haufe et al. study. 
 
-The original EEG data are part of a dataset from Haufe et al. called "Emergency braking during simulated driving." The dataset is available at http://bnci-horizon-2020.eu/database/data-sets
+The original EMG data are part of a dataset from Haufe et al. called "Emergency braking during simulated driving." The dataset is available at http://bnci-horizon-2020.eu/database/data-sets
 """
 import numpy as np
 import h5py
+import subprocess
+import os
 from glob import glob
 from tqdm import tqdm
 from statistics import mean
 from pathlib import Path
     
-from datasets import createDatasetFromEEGEvents, createDatasetFromEEGWithoutEvents, createDatasets
+from datasets import createDatasetFromEMGEvents, createDatasetFromEMGWithoutEvents, createDatasets
 from modelDev import trainModel, evaluateModel
 from models import getModel
 
+def runcmd(cmd, verbose = False, *args, **kwargs):
+    process = subprocess.Popen(
+        cmd,
+        stdout = subprocess.PIPE,
+        stderr = subprocess.PIPE,
+        text = True,
+        shell = True
+    )
+    std_out, std_err = process.communicate()
+    if verbose:
+        print(std_out.strip(), std_err)
+    pass
+
 def main():
-    #Find all paths for the test subject data.
-    testSubjectDataFilePaths =  glob('../EEG_Dataset_Haufe/*.mat')
-
+    #Find all paths for the test subject data. Download data files if the paths are not found.
+    testSubjectDataFilePaths =  glob('../EMG_Dataset_Haufe/*.mat')
+    if len(testSubjectDataFilePaths) < 18:
+        os.chdir(r"../EMG_Dataset_Haufe/")
+        runcmd("wget -i links.txt --no-check-certificate", verbose = True)
+        os.chdir(r"../code/")
+        testSubjectDataFilePaths =  glob('../EMG_Dataset_Haufe/*.mat')
     PSDComponentsUpperLimit = 129 #129 = Maximum number of power spectral density (PSD) components for samplingRate = 200 hz.
-
-    channelsOfInterest = ['POz'] 
-    #['P9'] 
-    #['P10'] 
-    #['FCz'] 
-    #['CPz']
-    #['P9', 'P10', 'CPz', 'FCz'] 
-    #['all channels'] 
-    
     #Setup progress bar
     pbar = tqdm(range(1, PSDComponentsUpperLimit+1)) #Number of PSD components from 1 to maximum in increments of 20.
     #pbar = tqdm(range(129, 130)) 
@@ -80,41 +90,28 @@ def main():
                         carBrakeTime.append(mrk.time[i][0]) #Store timestamp 
 
                 #Create train and validation datasets
-                brakingEvent_eeg_PSD_train = []
-                brakingEvent_eeg_PSD_val = []
+                brakingEvent_emg_PSD_train = []
+                brakingEvent_emg_PSD_val = []
 
-                noEvent_eeg_PSD_train = []
-                noEvent_eeg_PSD_val = []
+                noEvent_emg_PSD_train = []
+                noEvent_emg_PSD_val = []
 
-                #Iterate through all EEG channels.
-                for channelNum in range(0, 61):
-
-                    if channelsOfInterest != ['all channels']:
-                        ref = cnt.clab[channelNum][0]
-                        channelName = bytes(np.array(cnt[ref]).ravel().tolist()).decode('UTF-8')
-
-                        if channelName not in channelsOfInterest:
-                            continue
-
-                    data = cnt.x[channelNum]
-                    event_eeg_PSD_train, event_eeg_PSD_val = createDatasetFromEEGEvents(carBrakeTime, 
-                                                                                        data, 
-                                                                                        samplingRate,
-                                                                                        numberOfPSDComponents)
-                    _noEvent_eeg_PSD_train, _noEvent_eeg_PSD_val = createDatasetFromEEGWithoutEvents(mrk.time, 
-                                                                                                     data, 
-                                                                                                     samplingRate, 
-                                                                                                     numberOfPSDComponents)
-
-                    for array in event_eeg_PSD_train: brakingEvent_eeg_PSD_train.append(array)
-                    for array in event_eeg_PSD_val: brakingEvent_eeg_PSD_val.append(array)
-                    for array in _noEvent_eeg_PSD_train: noEvent_eeg_PSD_train.append(array)
-                    for array in _noEvent_eeg_PSD_val: noEvent_eeg_PSD_val.append(array)
-                
-                trainData, trainLabels, valData, valLabels = createDatasets(brakingEvent_eeg_PSD_train,
-                                                                            noEvent_eeg_PSD_train,
-                                                                            brakingEvent_eeg_PSD_val,
-                                                                            noEvent_eeg_PSD_val)
+                data = cnt.x[61] #Channel 61 for EMG of tibialis anterior
+                event_emg_PSD_train, event_emg_PSD_val = createDatasetFromEMGEvents(carBrakeTime, 
+                                                                                    data, 
+                                                                                    samplingRate, 
+                                                                                    numberOfPSDComponents)
+                _noEvent_emg_PSD_train, _noEvent_emg_PSD_val = createDatasetFromEMGWithoutEvents(mrk.time, 
+                                                                                                 data, 
+                                                                                                 samplingRate, numberOfPSDComponents)
+                for array in event_emg_PSD_train: brakingEvent_emg_PSD_train.append(array)
+                for array in event_emg_PSD_val: brakingEvent_emg_PSD_val.append(array)
+                for array in _noEvent_emg_PSD_train: noEvent_emg_PSD_train.append(array)
+                for array in _noEvent_emg_PSD_val: noEvent_emg_PSD_val.append(array)
+                trainData, trainLabels, valData, valLabels = createDatasets(brakingEvent_emg_PSD_train,
+                                                                            noEvent_emg_PSD_train,
+                                                                            brakingEvent_emg_PSD_val,
+                                                                            noEvent_emg_PSD_val)
                 model = getModel(selectedModel)
                 
                 trainedModel = trainModel(model, trainData, trainLabels)
