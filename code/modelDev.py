@@ -31,6 +31,9 @@ def evaluateModel(model, selectedModel, valData, valLabels):
     return AUCaccuracy #,accuracy
 
 import tensorflow as tf
+print("TensorFlow version: ", tf.__version__)
+print("Available GPU names: ", tf.test.gpu_device_name())
+print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Dense
