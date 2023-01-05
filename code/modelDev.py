@@ -60,4 +60,4 @@ def trainMLPModel(trainData, trainLabels, valData, valLabels):
 
 def evaluateMLPModel(model, valData, valLabels):
     valResults = model.evaluate(valData, valLabels, batch_size=1)
-    return 
+    return valResults
