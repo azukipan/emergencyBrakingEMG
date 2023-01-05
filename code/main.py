@@ -12,26 +12,39 @@ from glob import glob
 from tqdm import tqdm
 from statistics import mean
 from pathlib import Path
-from sklearn.decomposition import PCA
-
+    
 from datasets import createDatasetFromEMGEvents, createDatasetFromEMGWithoutEvents, createDatasets
-from modelDev import trainModel, evaluateModel
+from modelDev import trainModel, evaluateModel, trainMLPModel, evaluateMLPModel
 from models import getModel
 
+def runcmd(cmd, verbose = False, *args, **kwargs):
+    process = subprocess.Popen(
+        cmd,
+        stdout = subprocess.PIPE,
+        stderr = subprocess.PIPE,
+        text = True,
+        shell = True
+    )
+    std_out, std_err = process.communicate()
+    if verbose:
+        print(std_out.strip(), std_err)
+    pass
+
 def main():
-    #Find all paths for the test subject data. Download data files if the paths are not found.
+    #Get test subject data
+    print("Downloading dataset...")
+    os.chdir(r"../EMG_Dataset_Haufe/")
+    cmd = "wget -i links.txt -c --no-check-certificate"
+    subprocess.check_call(cmd, shell=True, stdout=sys.stdout, stderr=subprocess.STDOUT)
+    os.chdir(r"../code/")
     testSubjectDataFilePaths =  glob('../EMG_Dataset_Haufe/*.mat')
-    if len(testSubjectDataFilePaths) < 1:
-        print("Downloading dataset...")
-        os.chdir(r"../EMG_Dataset_Haufe/")
-        cmd = "wget -i links.txt -c --no-check-certificate"
-        subprocess.check_call(cmd, shell=True, stdout=sys.stdout, stderr=subprocess.STDOUT)
-        os.chdir(r"../code/")
-        testSubjectDataFilePaths =  glob('../EMG_Dataset_Haufe/*.mat')
     PSDComponentsUpperLimit = 129 #129 = Maximum number of power spectral density (PSD) components for samplingRate = 200 hz.
     #Setup progress bar
     pbar = tqdm(range(1, PSDComponentsUpperLimit+1)) #Number of PSD components from 1 to maximum in increments of 20.
-    modelOptions = ["Perceptron",
+    #pbar = tqdm(range(129, 130)) 
+    
+    modelOptions = ["MLP",
+                    "Perceptron",
                     "LDA", 
                     "SVM",
                     "Logistic Regression"
@@ -41,7 +54,6 @@ def main():
     p = Path("../results")
     p.mkdir(exist_ok=True)
     
-    numberOfPCAComponents = 15
     for selectedModel in modelOptions:
         #Create log file for AUCs and number of PSD components.
         AUCLog = open("../results/{}_AUC.csv".format(selectedModel), "a+")
@@ -51,7 +63,6 @@ def main():
         pbar.set_description("Model:{}\nCalculating AUC for each number of PSD components.".format(selectedModel))
         for numberOfPSDComponents in pbar: #Iterate through all user-specified time segments to obtain AUCs.
             allTestSubjectAUCs = []
-            allTestSubjectAUCsPCA = []
             for path in testSubjectDataFilePaths:
                 f = h5py.File(path,'r')
                 '''
@@ -103,20 +114,14 @@ def main():
                                                                             noEvent_emg_PSD_train,
                                                                             brakingEvent_emg_PSD_val,
                                                                             noEvent_emg_PSD_val)
-                model = getModel(selectedModel)
-                
-                trainedModel = trainModel(model, trainData, trainLabels)
-                AUCaccuracy = evaluateModel(trainedModel, selectedModel, valData, valLabels)
+                if selectedModel == "MLP":
+                    valResults = trainMLPModel(trainData, trainLabels, valData, valLabels)
+                    AUCaccuracy = valResults[1]
+                else:
+                    model = getModel(selectedModel)
+                    trainedModel = trainModel(model, trainData, trainLabels)
+                    AUCaccuracy = evaluateModel(trainedModel, selectedModel, valData, valLabels)
                 allTestSubjectAUCs.append(AUCaccuracy)
-                
-                if numberOfPSDComponents > numberOfPCAComponents-1:
-                    pca = PCA(n_components=15, whiten=True)
-                    pca.fit(trainData)
-                    trainDataPCA = pca.transform(trainData)
-                    valDataPCA = pca.transform(valData)
-                    trainedModelPCA = trainModel(model, trainDataPCA, trainLabels)
-                    AUCaccuracyPCA = evaluateModel(trainedModelPCA, selectedModel, valDataPCA, valLabels)
-                    allTestSubjectAUCsPCA.append(AUCaccuracyPCA)
             grandAverageAUC = round(mean(allTestSubjectAUCs), 3)
             print("Number of PSD components = ", numberOfPSDComponents, " | AUC accuracy = ", grandAverageAUC)
             
@@ -124,13 +129,6 @@ def main():
             AUCLog = open("../results/{}_AUC.csv".format(selectedModel), "a+")
             AUCLog.write("{},{}\n".format(numberOfPSDComponents, grandAverageAUC))
             AUCLog.close()
-            
-            if numberOfPSDComponents > numberOfPCAComponents-1:
-                grandAverageAUCPCA = round(mean(allTestSubjectAUCsPCA), 3)
-                print("Number of PSD components = ", numberOfPSDComponents, " | AUC accuracy PCA = ", grandAverageAUCPCA)
-                AUCLogPCA = open("../results/{}_AUC_PCA.csv".format(selectedModel), "a+")
-                AUCLogPCA.write("{},{}\n".format(numberOfPSDComponents, grandAverageAUCPCA))
-                AUCLogPCA.close()
         
 if __name__ == "__main__":
     main()
