@@ -57,7 +57,7 @@ def trainMLPModel(trainData, trainLabels, valData, valLabels):
     model.compile(optimizer='adam', loss=tf.keras.losses.BinaryCrossentropy(),
               metrics=[tf.keras.metrics.AUC(), tf.keras.metrics.Accuracy()])
     # fit the autoencoder model to reconstruct input
-    model.fit(trainData, trainLabels, epochs=50, batch_size=1, verbose=2, validation_split = 0.2)
+    model.fit(trainData, trainLabels, epochs=300, batch_size=32, verbose=2, validation_split = 0.2)
     valResults = evaluateMLPModel(model, valData, valLabels)
     return valResults
 
