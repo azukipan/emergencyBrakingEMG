@@ -1,18 +1,22 @@
 from sklearn.svm import SVC
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import roc_auc_score
 import numpy as np
 
 #Definitions for model development.
 def trainModel(model, trainData, trainLabels):
+    
     model.fit(np.array(trainData), trainLabels)
+    
     return model
+
 def evaluateModel(model, selectedModel, valData, valLabels):
     #Validate model
     #eventPredictions = model.predict(valData).tolist()
     #Accuracy as percent of correct predictions out of total predictions.
     #accuracy = abs(sum(eventPredictions-valLabels))/len(eventPredictions)
+    
     #Choose compatible prediction method based on model type.
     '''
     switch={
@@ -26,38 +30,44 @@ def evaluateModel(model, selectedModel, valData, valLabels):
         AUCaccuracy = roc_auc_score(valLabels, model.decision_function(np.array(valData)))
     else:
         AUCaccuracy = roc_auc_score(valLabels, model.predict_proba(np.array(valData))[:, 1])
+    
     #Area under the curve score
     #AUCaccuracy = roc_auc_score(valLabels, switch.get(selectedModel))
+    
     return AUCaccuracy #,accuracy
 
 import tensorflow as tf
-print("TensorFlow version: ", tf.__version__)
-print("Available GPU names: ", tf.test.gpu_device_name())
-print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import LeakyReLU
 
 def trainMLPModel(trainData, trainLabels, valData, valLabels):
-    # number of input columns for autoencoder
+    # Number of input columns 
     n_inputs = trainData.shape[1]
-    # Hidden layers
     visible = Input(shape=(n_inputs,))
+    # Hidden layers
     x = Dense(64)(visible)
-    #x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
     x = Dense(32)(x)
-    #x = BatchNormalization()(x)
-    # output layer
+    x = LeakyReLU()(x)
+    x = Dense(16)(x)
+    x = LeakyReLU()(x)
+    # Output layer
     output = Dense(1, activation='sigmoid')(x)
-    #output = Dense(1, activation='sigmoid')(visible)
-    # define autoencoder model
+    # Define model
     model = Model(inputs=visible, outputs=output)
-    # compile autoencoder model
+    # Compile model
     model.compile(optimizer='adam', loss=tf.keras.losses.BinaryCrossentropy(),
               metrics=[tf.keras.metrics.AUC(), tf.keras.metrics.Accuracy()])
-    # fit the autoencoder model to reconstruct input
-    model.fit(trainData, trainLabels, epochs=300, batch_size=32, verbose=2, validation_split = 0.2)
+    # Rescale data to be between 0 and 1
+    scaler = MinMaxScaler()
+    scaler.fit(trainData)
+    trainData = scaler.transform(trainData)
+    valData = scaler.transform(valData)
+    # Train model
+    model.fit(trainData, trainLabels, epochs=200, batch_size=32, verbose=2, validation_split = 0.2)
+    # Validate model
     valResults = evaluateMLPModel(model, valData, valLabels)
     return valResults
 
