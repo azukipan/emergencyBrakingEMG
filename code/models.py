@@ -12,6 +12,7 @@ def getModel(selectedModel):
         "Perceptron":make_pipeline(StandardScaler(), SGDClassifier(loss = "perceptron")),
         "Logistic Regression":make_pipeline(StandardScaler(), SGDClassifier(loss = "log")),
         "LDA":make_pipeline(StandardScaler(), LinearDiscriminantAnalysis()) 
+        #MLP model initialized in modelDev.py
     }
     
     model = switch.get(selectedModel)
