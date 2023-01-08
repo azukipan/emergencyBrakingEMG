@@ -58,7 +58,7 @@ def trainMLPModel(trainData, trainLabels, valData, valLabels):
     # Define model
     model = Model(inputs=visible, outputs=output)
     # Compile model
-    model.compile(optimizer='adam', loss=tf.keras.losses.BinaryCrossentropy(),
+    model.compile(optimizer='adamax', loss=tf.keras.losses.BinaryCrossentropy(),
               metrics=[tf.keras.metrics.AUC(), tf.keras.metrics.Accuracy()])
     # Rescale data to be between 0 and 1
     scaler = MinMaxScaler()
@@ -66,7 +66,7 @@ def trainMLPModel(trainData, trainLabels, valData, valLabels):
     trainData = scaler.transform(trainData)
     valData = scaler.transform(valData)
     # Train model
-    model.fit(trainData, trainLabels, epochs=200, batch_size=32, verbose=2, validation_split = 0.2)
+    model.fit(trainData, trainLabels, epochs=100, batch_size=32, verbose=2, validation_split = 0.2)
     # Validate model
     valResults = evaluateMLPModel(model, valData, valLabels)
     return valResults
