@@ -41,6 +41,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import LeakyReLU
+from tensorflow.keras.layers import BatchNormalization
 
 def trainMLPModel(trainData, trainLabels, valData, valLabels):
     # Number of input columns 
@@ -48,10 +49,13 @@ def trainMLPModel(trainData, trainLabels, valData, valLabels):
     visible = Input(shape=(n_inputs,))
     # Hidden layers
     x = Dense(64)(visible)
+    x = BatchNormalization()(x)
     x = LeakyReLU()(x)
     x = Dense(32)(x)
+    x = BatchNormalization()(x)
     x = LeakyReLU()(x)
     x = Dense(16)(x)
+    x = BatchNormalization()(x)
     x = LeakyReLU()(x)
     # Output layer
     output = Dense(1, activation='sigmoid')(x)
