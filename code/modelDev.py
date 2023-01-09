@@ -42,6 +42,7 @@ from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Dropout
 
 def trainMLPModel(trainData, trainLabels, valData, valLabels):
     # Number of input columns 
@@ -49,6 +50,7 @@ def trainMLPModel(trainData, trainLabels, valData, valLabels):
     visible = Input(shape=(n_inputs,))
     # Hidden layers
     x = Dense(8)(visible)
+    x = Dropout(0.4)(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
     # Output layer
