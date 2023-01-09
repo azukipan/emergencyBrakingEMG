@@ -48,7 +48,7 @@ def trainMLPModel(trainData, trainLabels, valData, valLabels):
     n_inputs = trainData.shape[1]
     visible = Input(shape=(n_inputs,))
     # Hidden layers
-    x = Dense(16)(visible)
+    x = Dense(8)(visible)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
     # Output layer
