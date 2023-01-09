@@ -42,24 +42,12 @@ from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import BatchNormalization
-from tensorflow.keras.layers import Concatenate
+
 def trainMLPModel(trainData, trainLabels, valData, valLabels):
     # Number of input columns 
     n_inputs = trainData.shape[1]
     visible = Input(shape=(n_inputs,))
     # Hidden layers
-    x = Dense(256)(visible)
-    x = BatchNormalization()(x)
-    x = LeakyReLU()(x)
-    x = Dense(128)(visible)
-    x = BatchNormalization()(x)
-    x = LeakyReLU()(x)
-    x = Dense(64)(visible)
-    x = BatchNormalization()(x)
-    x = LeakyReLU()(x)
-    x = Dense(32)(visible)
-    x = BatchNormalization()(x)
-    x = LeakyReLU()(x)
     x = Dense(16)(visible)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
