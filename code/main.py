@@ -10,7 +10,7 @@ import os
 import sys
 from glob import glob
 from tqdm import tqdm
-from statistics import mean
+from statistics import mean, stdev
 from pathlib import Path
     
 from datasets import createDatasetFromEMGEvents, createDatasetFromEMGWithoutEvents, createDatasets
@@ -57,7 +57,7 @@ def main():
     for selectedModel in modelOptions:
         #Create log file for AUCs and number of PSD components.
         AUCLog = open("../results/{}_AUC.csv".format(selectedModel), "a+")
-        AUCLog.write("Number of Components,Area Under Curve\n") #Headers
+        AUCLog.write("Number of Components,Grand Average Area Under Curve,Standard Deviation\n") #Headers
         AUCLog.close()
 
         pbar.set_description("Model:{}\nCalculating AUC for each number of PSD components.".format(selectedModel))
@@ -123,11 +123,15 @@ def main():
                     AUCaccuracy = evaluateModel(trainedModel, selectedModel, valData, valLabels)
                 allTestSubjectAUCs.append(AUCaccuracy)
             grandAverageAUC = round(mean(allTestSubjectAUCs), 3)
-            print("Number of PSD components = ", numberOfPSDComponents, " | AUC accuracy = ", grandAverageAUC)
+            grandStandardDeviationAUC = round(stdev(allTestSubjectAUCs), 3)
+            print("Number of PSD components = ", 
+                  numberOfPSDComponents, " | AUC accuracy = ", 
+                  grandAverageAUC, "| AUC standard deviation = ", 
+                  grandStandardDeviationAUC)
             
             #Save AUC and number of PSD components.
             AUCLog = open("../results/{}_AUC.csv".format(selectedModel), "a+")
-            AUCLog.write("{},{}\n".format(numberOfPSDComponents, grandAverageAUC))
+            AUCLog.write("{},{}\n".format(numberOfPSDComponents, grandAverageAUC, grandStandardDeviationAUC))
             AUCLog.close()
         
 if __name__ == "__main__":
