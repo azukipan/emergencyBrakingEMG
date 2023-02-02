@@ -41,8 +41,6 @@ def main():
     PSDComponentsUpperLimit = 129 #129 = Maximum number of power spectral density (PSD) components for samplingRate = 200 hz.
     #Setup progress bar
     pbar = tqdm(range(1, PSDComponentsUpperLimit+1)) #Number of PSD components from 1 to maximum in increments of 20.
-    #pbar = tqdm(range(129, 130)) 
-    
     modelOptions = ["MLP",
                     "Perceptron",
                     "LDA", 

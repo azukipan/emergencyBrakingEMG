@@ -12,10 +12,10 @@ def createDatasetFromEMGEvents(timestamps,
                                 data, 
                                 samplingRate, 
                                 numberOfPSDComponents = 4, 
-                                dataAblationOrder = "highFreqtoLowFreq"):
+                                dataAblationOrder = "lowFreqtoHighFreq"):
     dataAblationSetting = {
-        "highFreqtoLowFreq":[-numberOfPSDComponents, None],
-        "lowFreqtoHighFreq":[0, numberOfPSDComponents]
+        "lowFreqtoHighFreq":[-numberOfPSDComponents, None],
+        "highFreqtoLowFreq":[0, numberOfPSDComponents]
     }
     dt = 1/samplingRate #Time increment in seconds
     dt1_index = 0
@@ -57,10 +57,10 @@ def createDatasetFromEMGEvents(timestamps,
 def createDatasetFromEMGWithoutEvents(timestamps, 
                                         data, samplingRate,
                                         numberOfPSDComponents=4,  
-                                        dataAblationOrder = "highFreqtoLowFreq"):
+                                        dataAblationOrder = "lowFreqtoHighFreq"):
     dataAblationSetting = {
-        "highFreqtoLowFreq":[-numberOfPSDComponents, None],
-        "lowFreqtoHighFreq":[0, numberOfPSDComponents]
+        "lowFreqtoHighFreq":[-numberOfPSDComponents, None],
+        "highFreqtoLowFreq":[0, numberOfPSDComponents]
     }
     dt = 1/samplingRate #Time increment in seconds
     dt1_index = 0
