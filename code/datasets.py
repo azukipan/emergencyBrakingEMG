@@ -8,7 +8,15 @@ import numpy as np
 #Get segments of braking event EMG.
 #Covert to PSD.
 #Store PSD components of each segment in variable for training.
-def createDatasetFromEMGEvents(timestamps, data, samplingRate, numberOfPSDComponents = 4):
+def createDatasetFromEMGEvents(timestamps, 
+                                data, 
+                                samplingRate, 
+                                numberOfPSDComponents = 4, 
+                                dataAblationOrder = "highFreqtoLowFreq"):
+    dataAblationSetting = {
+        "highFreqtoLowFreq":[-numberOfPSDComponents, None],
+        "lowFreqtoHighFreq":[0, numberOfPSDComponents]
+    }
     dt = 1/samplingRate #Time increment in seconds
     dt1_index = 0
     dt2_index = int(100/1000/dt) #Covert timestamps to seconds and divde by time increment to get index of datapoint at 100 ms.
@@ -29,16 +37,31 @@ def createDatasetFromEMGEvents(timestamps, data, samplingRate, numberOfPSDCompon
                                                             samplingRate
                                                             )
         if time < len(data)*1000*dt/2:
-            brakingEvent_emg_PSD_train.append(np.sort(np.sum(pwr_spectral_density_data[0],1))[-numberOfPSDComponents:None].tolist())
+            brakingEvent_emg_PSD_train.append(
+                np.sort(
+                    np.sum(pwr_spectral_density_data[0],1)
+                    )[dataAblationSetting[dataAblationOrder][0]:dataAblationSetting[dataAblationOrder][1]].tolist()
+                )
             continue
-        brakingEvent_emg_PSD_val.append(np.sort(np.sum(pwr_spectral_density_data[0],1))[-numberOfPSDComponents:None].tolist())
+        brakingEvent_emg_PSD_val.append(
+            np.sort(
+                np.sum(pwr_spectral_density_data[0],1)
+                )[dataAblationSetting[dataAblationOrder][0]:dataAblationSetting[dataAblationOrder][1]].tolist()
+            )
     return brakingEvent_emg_PSD_train, brakingEvent_emg_PSD_val
 #Create baseline training EMG data containing no braking event EMG via these steps:
 #Get 100 ms EMG segment at beginning of data to use for baseline correction.
 #Get segments of EMG without braking events and subract 100 ms EMG segment.
 #Covert to PSD.
 #Store PSD components of each segment in variable for training.
-def createDatasetFromEMGWithoutEvents(timestamps, data, samplingRate, numberOfPSDComponents=4):
+def createDatasetFromEMGWithoutEvents(timestamps, 
+                                        data, samplingRate,
+                                        numberOfPSDComponents=4,  
+                                        dataAblationOrder = "highFreqtoLowFreq"):
+    dataAblationSetting = {
+        "highFreqtoLowFreq":[-numberOfPSDComponents, None],
+        "lowFreqtoHighFreq":[0, numberOfPSDComponents]
+    }
     dt = 1/samplingRate #Time increment in seconds
     dt1_index = 0
     dt2_index = int(100/1000/dt) #Covert timestamps to seconds and divde by time increment to get index of datapoint at 100 ms.
@@ -63,9 +86,17 @@ def createDatasetFromEMGWithoutEvents(timestamps, data, samplingRate, numberOfPS
                                                                 samplingRate
                                                                 )
             if timestamps[i][0] < len(data)*1000*dt/2: #Check if timestamp is less half than total time of EMG data.
-                noEvent_emg_PSD_train.append(np.sort(np.sum(pwr_spectral_density_data[0],1))[-numberOfPSDComponents:None].tolist())
+                noEvent_emg_PSD_train.append(
+                    np.sort(
+                        np.sum(pwr_spectral_density_data[0],1)
+                        )[dataAblationSetting[dataAblationOrder][0]:dataAblationSetting[dataAblationOrder][1]].tolist()
+                    )
                 continue
-            noEvent_emg_PSD_val.append(np.sort(np.sum(pwr_spectral_density_data[0],1))[-numberOfPSDComponents:None].tolist())
+            noEvent_emg_PSD_val.append(
+                np.sort(
+                    np.sum(pwr_spectral_density_data[0],1)
+                    )[dataAblationSetting[dataAblationOrder][0]:dataAblationSetting[dataAblationOrder][1]].tolist()
+                )
         if i == len(timestamps): #If iteration reaches last event timestamp, set indices to get any possible EMG segment beyond timestamp.
             numberOfSegments = int((len(data)*1000*dt/2-timestamps[i][0])/2000) #Calculate how many user-specified EMG segments can fit between two events.
             for segmentNum in range(0, numberOfSegments):
@@ -79,9 +110,17 @@ def createDatasetFromEMGWithoutEvents(timestamps, data, samplingRate, numberOfPS
                                                                     samplingRate
                                                                     )
                 if timestamps[i][0] < len(data)*1000*dt/2:
-                    noEvent_emg_PSD_train.append(np.sort(np.sum(pwr_spectral_density_data[0],1))[-numberOfPSDComponents:None].tolist())
+                    noEvent_emg_PSD_train.append(
+                        np.sort(
+                            np.sum(pwr_spectral_density_data[0],1)
+                            )[dataAblationSetting[dataAblationOrder][0]:dataAblationSetting[dataAblationOrder][1]].tolist()
+                        )
                     continue
-                noEvent_emg_PSD_val.append(np.sort(np.sum(pwr_spectral_density_data[0],1))[-numberOfPSDComponents:None].tolist())
+                noEvent_emg_PSD_val.append(
+                    np.sort(
+                        np.sum(pwr_spectral_density_data[0],1)
+                        )[dataAblationSetting[dataAblationOrder][0]:dataAblationSetting[dataAblationOrder][1]].tolist()
+                    )
     return noEvent_emg_PSD_train, noEvent_emg_PSD_val
 #Combine datasets with and without braking events.
 def createDatasets(brakingEvent_emg_PSD_train, noEvent_emg_PSD_train, brakingEvent_emg_PSD_val, noEvent_emg_PSD_val):
