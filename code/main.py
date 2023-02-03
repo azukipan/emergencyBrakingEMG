@@ -53,14 +53,16 @@ def main():
         "High to low frequency":"highFreqtoLowFreq",
         "Low to high frequency":"lowFreqtoHighFreq"
     }
+    #Create model development results folder
+    p = Path("../results/")
+    p.mkdir(exist_ok=True)
     for order in dataAblationOrder:
-        #Create model development results folder.
-        p = Path("../results_{}".format(dataAblationOrder[order]))
+        #Create model development results folder for data ablation order.
+        p = Path("../results/results_{}".format(dataAblationOrder[order]))
         p.mkdir(exist_ok=True)
-        
         for selectedModel in modelOptions:
             #Create log file for AUCs and number of PSD components.
-            AUCLog = open("../results/{}_AUC.csv".format(selectedModel), "a+")
+            AUCLog = open("../results/results_{}/{}_AUC.csv".format(dataAblationOrder[order],selectedModel), "a+")
             AUCLog.write("Number of Components,Grand Average Area Under Curve,Standard Deviation\n") #Headers
             AUCLog.close()
 
@@ -137,7 +139,7 @@ def main():
                     grandStandardDeviationAUC)
                 
                 #Save AUC and number of PSD components.
-                AUCLog = open("../results/{}_AUC.csv".format(selectedModel), "a+")
+                AUCLog = open("../results/results_{}/{}_AUC.csv".format(dataAblationOrder[order],selectedModel), "a+")
                 AUCLog.write("{},{}\n".format(numberOfPSDComponents, grandAverageAUC, grandStandardDeviationAUC))
                 AUCLog.close()
         
