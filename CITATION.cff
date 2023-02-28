@@ -4,7 +4,7 @@ authors:
 - family-names: "Nacpil"
   given-names: "Edric John Cruz"
   orcid: "https://orcid.org/0000-0003-2873-5431"
-title: "Emergency Braking Prediction During Driving Simulations Using Logistic Regression Classification of EMGs"
+title: "Human-centered Machine Learning for Surface Electromyography-based Prediction of Emergency Braking: A Driving Simulator Study"
 version: 1.0.0
 date-released: 2023-02-28
 url: "https://github.com/azukipan/emergencyBrakingEMG"
